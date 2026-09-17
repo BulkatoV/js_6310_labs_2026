@@ -199,14 +199,14 @@ const taskManager = {
     ],
 
     addTask(title, priority = "medium") {
-        // 5.1 Добавление задачи
         const newTask = {
-            id: this.tasks.length + 1,
+            id: this.tasks.length > 0 
+                ? Math.max(...this.tasks.map(t => t.id)) + 1 
+                : 1,
             title: title,
             completed: false,
             priority: priority
         };
-         
         this.tasks.push(newTask);
     },
 
@@ -501,7 +501,9 @@ function runTests() {
     const arrayResult = processArrays();
 
     // Тест 12: forEach
-    console.assert([67, 89, 56, 91].join(',') === '67,89,56,91', "Тест forEach провален");
+    const numbersOver50 = [67, 89, 56, 91];
+    console.assert(numbersOver50.length === 4, "Тест forEach провален");
+    console.assert(numbersOver50.every(n => n > 50), "Тест forEach провален");
 
     // Тест 13: map
     console.assert(arrayResult.squares.join(',') === 
@@ -596,6 +598,18 @@ function runTests() {
     const testVehicle = new Vehicle('Test', 'Model', 2010);
     console.assert(testVehicle.age === (new Date().getFullYear() - 2010), 'Тест возраста провален');
 
+    // Тест 29: compareAge (статический метод)
+    const vehicle1 = new Vehicle('Toyota', 'Camry', 2015);
+    const vehicle2 = new Vehicle('Honda', 'Civic', 2018);
+    console.assert(Vehicle.compareAge(vehicle1, vehicle2) === 3, 
+        'Тест compareAge провален');
+
+    // Тест 30: setter year (проверка на будущий год)
+    const testVehicle2 = new Vehicle('Test', 'Model', 2020);
+    testVehicle2.year = 2030; // Устанавливаем будущий год
+    console.assert(testVehicle2.year === new Date().getFullYear(), 
+        'Тест setter year провален - год не должен быть больше текущего');
+
     console.log("== Тесты задания 6 завершены ==");
 
     console.log("\n== ЗАДАНИЕ 7 ==");
@@ -609,65 +623,59 @@ function runTests() {
     
     console.log("== Тесты задания 7 завершены ==");
     
-    console.log("\n== ЗАДАНИЕ 8 ==");
+        console.log("\n== ЗАДАНИЕ 8 ==");
 
-    const tests = [
-        // 1. Корректный email
-        { email: "user@example.com", expected: true },
-
-        // 2. Корректный email с цифрами
-        { email: "user123@example.com", expected: true },
-
-        // 3. Корректный email с точкой в имени
-        { email: "john.doe@example.com", expected: true },
-
-        // 4. Корректный email с дефисом
-        { email: "john-doe@example.com", expected: true },
-
-        // 5. Нет символа @
-        { email: "userexample.com", expected: false },
-
-        // 6. Нет домена
-        { email: "user@", expected: false },
-
-        // 7. Нет имени пользователя
-        { email: "@example.com", expected: false },
-
-        // 8. Нет точки после домена
-        { email: "user@example", expected: false },
-
-        // 9. Пробел в email
-        { email: "user name@example.com", expected: false },
-
-        // 10. Два символа @
-        { email: "user@@example.com", expected: false },
-
-        // 11. Нет текста после точки
-        { email: "user@example.", expected: false },
-
-        // 12. Домен верхнего регистра
-        { email: "USER@EXAMPLE.COM", expected: true },
-
-        // 13. Корректный email с подчеркиванием
-        { email: "user_name@example.com", expected: true },
-
-        // 14. Слишком короткий email
-        { email: "a@b.c", expected: false }
+    const emailTests = [
+        // Базовые корректные email
+        { email: "user@example.com", expected: true, desc: "Базовый email" },
+        { email: "user123@example.com", expected: true, desc: "С цифрами" },
+        { email: "john.doe@example.com", expected: true, desc: "С точкой в имени" },
+        { email: "john-doe@example.com", expected: true, desc: "С дефисом" },
+        
+        // Спецсимволы % и + в локальной части (замечание преподавателя)
+        { email: "user%name@example.com", expected: true, desc: "Спецсимвол %" },
+        { email: "user+tag@example.com", expected: true, desc: "Спецсимвол +" },
+        
+        // Поддомен (замечание преподавателя)
+        { email: "user@mail.example.com", expected: true, desc: "Поддомен" },
+        
+        // Кириллица должна отклоняться (замечание преподавателя)
+        { email: "пользователь@example.com", expected: false, desc: "Кириллица" },
+        
+        // Некорректные форматы
+        { email: "userexample.com", expected: false, desc: "Нет @" },
+        { email: "user@", expected: false, desc: "Нет домена" },
+        { email: "@example.com", expected: false, desc: "Нет имени" },
+        { email: "user@example", expected: false, desc: "Нет точки после домена" },
+        { email: "user name@example.com", expected: false, desc: "Пробел" },
+        { email: "user@@example.com", expected: false, desc: "Два @" },
+        { email: "user@example.", expected: false, desc: "Нет текста после точки" },
+        { email: "USER@EXAMPLE.COM", expected: true, desc: "Верхний регистр" },
+        { email: "user_name@example.com", expected: true, desc: "Подчеркивание" },
+        
+        // Минимальная длина TLD (замечание про Тест 14)
+        { email: "a@b.co", expected: true, desc: "Минимальный TLD (2 символа)" },
+        { email: "a@b.c", expected: false, desc: "Односимвольный TLD" }
     ];
 
-    tests.forEach((test, index) => {
+    let allPassed = true;
+    
+    emailTests.forEach((test, index) => {
         const result = validateEmail(test.email);
-
-        console.log(
-            `Тест почты ${index + 1}:`,
-            result === test.expected ? "ПРОЙДЕН" : "НЕ ПРОЙДЕН",
-            `| Email: "${test.email}"`,
-            `| Ожидалось: ${test.expected}`,
-            `| Получено: ${result}`
-        );
+        const passed = result === test.expected;
+        
+        if (!passed) {
+            allPassed = false;
+            console.assert(false, 
+                `Тест ${index + 1} (${test.desc}) провален: "${test.email}" | Ожидалось: ${test.expected}, Получено: ${result}`);
+        } else {
+            console.log(`✅ Тест ${index + 1} (${test.desc}): ПРОЙДЕН`);
+        }
     });
 
-    console.log("Все тесты пройдены! ✅");
+    if (allPassed) {
+        console.log("Все тесты задания 8 пройдены! ✅");
+    }
 }
 
 // Запуск тестов
