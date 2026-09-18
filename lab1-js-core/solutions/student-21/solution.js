@@ -282,12 +282,10 @@ function taskClasses() {
         // Добавьте сеттер для года выпуска с проверкой: год не может быть больше текущего.
         set year(newYear) {
             const currentYear = new Date().getFullYear();
-            if (currentYear >= newYear) {
-                this._year = newYear;
-            } else {
-                console.error("Ошибка: год выпуска не может быть больше текущего");
-                this._year = currentYear;
+            if (newYear > currentYear) {
+                throw new Error("Год выпука не может быть больше текущего");
             }
+            this._year = newYear;
         }
 
         get year() {
@@ -606,10 +604,13 @@ function runTests() {
 
     // Тест 30: setter year (проверка на будущий год)
     const testVehicle2 = new Vehicle('Test', 'Model', 2020);
-    testVehicle2.year = 2030; // Устанавливаем будущий год
-    console.assert(testVehicle2.year === new Date().getFullYear(), 
-        'Тест setter year провален - год не должен быть больше текущего');
-
+    let yearErrorThrown = false;
+    try {
+        testVehicle2.year = 2030;
+    } catch (error) {
+        yearErrorThrown = true;
+    }
+    console.assert(yearErrorThrown, "Тест setter year провален");
     console.log("== Тесты задания 6 завершены ==");
 
     console.log("\n== ЗАДАНИЕ 7 ==");
