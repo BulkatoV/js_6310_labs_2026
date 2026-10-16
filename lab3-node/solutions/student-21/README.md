@@ -140,3 +140,9 @@ npm run test:coverage
 ## Скриншоты
 
 В папке images представлены примеры работы с основными командами бота
+
+Пример работы /add_transaction (Добавить транзакцию)
+![Команды /start и /add_transaction](images/add_transaction.png)
+
+Пример работы /report (Получить отчет за период)
+![Команда /report](images/report.png)
