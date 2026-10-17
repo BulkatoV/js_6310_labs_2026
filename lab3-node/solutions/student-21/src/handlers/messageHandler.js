@@ -88,7 +88,7 @@ const handleMessage = async (text, reply, userId = 'default') => {
       return;
     }
 
-    const saved = addTransaction({
+    const saved = addTransaction(userId, {
       date: session.date,
       category: session.category,
       amount,
@@ -125,7 +125,7 @@ const handleMessage = async (text, reply, userId = 'default') => {
       return;
     }
 
-    const report = getReport(session.from, text);
+    const report = getReport(userId, session.from, text);
     sessions.delete(userId);
 
     const categories = Object.entries(report.byCategory);

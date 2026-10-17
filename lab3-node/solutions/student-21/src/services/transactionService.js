@@ -3,9 +3,7 @@ import {
   saveTransactions,
 } from './transactionStorage.js';
 
-const transactions = loadTransactions();
-
-export const addTransaction = ({ date, category, amount }) => {
+export const addTransaction = (userId, { date, category, amount }) => {
   if (typeof date !== 'string' || !date.trim()) {
     throw new Error('Укажи дату транзакции');
   }
@@ -18,6 +16,8 @@ export const addTransaction = ({ date, category, amount }) => {
     throw new Error('Сумма должна быть положительным числом');
   }
 
+  const transactions = loadTransactions(userId);
+
   const transaction = {
     date,
     category: category.trim(),
@@ -25,15 +25,17 @@ export const addTransaction = ({ date, category, amount }) => {
   };
 
   transactions.push(transaction);
-  saveTransactions(transactions);
+  saveTransactions(userId, transactions);
 
   return transaction;
 };
 
-export const getReport = (from, to) => {
+export const getReport = (userId, from, to) => {
   if (!from || !to || from > to) {
     throw new Error('Укажи корректный период');
   }
+
+  const transactions = loadTransactions(userId);
 
   const filtered = transactions.filter(
     (transaction) => (
@@ -56,7 +58,6 @@ export const getReport = (from, to) => {
   return { total, byCategory };
 };
 
-export const clearTransactions = () => {
-  transactions.length = 0;
-  saveTransactions(transactions);
+export const clearTransactions = (userId) => {
+  saveTransactions(userId, []);
 };

@@ -1,20 +1,23 @@
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
-import { dirname } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const storagePath = fileURLToPath(
-  new URL('../../data/transactions.json', import.meta.url),
+const dataDirectory = fileURLToPath(
+  new URL('../../data/users/', import.meta.url)
 );
 
-export const loadTransactions = () => {
-  if (!existsSync(storagePath)) {
-    return [];
+const getUserStoragePath = (userId) => {
+  if (!/^\d+$/.test(String(userId))) {
+    throw new Error('Некорректный ID пользователя');
   }
+
+  return join(dataDirectory, `${userId}.json`);
+};
+
+export const loadTransactions = (userId) => {
+  const storagePath = getUserStoragePath(userId);
+
+  if (!existsSync(storagePath)) return [];
 
   const content = readFileSync(storagePath, 'utf8');
   const transactions = JSON.parse(content);
@@ -26,12 +29,14 @@ export const loadTransactions = () => {
   return transactions;
 };
 
-export const saveTransactions = (transactions) => {
+export const saveTransactions = (userId, transactions) => {
+  const storagePath = getUserStoragePath(userId);
+
   mkdirSync(dirname(storagePath), { recursive: true });
 
   writeFileSync(
     storagePath,
     JSON.stringify(transactions, null, 2),
-    'utf8',
+    'utf8'
   );
 };
