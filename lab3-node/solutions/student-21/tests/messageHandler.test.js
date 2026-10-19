@@ -1,3 +1,4 @@
+
 import handleMessage from '../src/handlers/messageHandler.js';
 import { beforeEach, describe, test, expect, jest } from '@jest/globals';
 
@@ -50,17 +51,22 @@ describe('Message handler', () => {
   });
 
   test('validates date and advances to category', async () => {
-    await handleMessage('/add_transaction', reply, 'test-date');
+    const userId = '910035';
+
+    await handleMessage('/add_transaction', reply, userId);
+    expect(reply).toHaveBeenCalledWith(
+      'Введи дату расхода в формате ДД-ММ-ГГГГ.',
+    );
     reply.mockClear();
 
-    await handleMessage('2026-02-30', reply, 'test-date');
+    await handleMessage('30-02-2026', reply, userId);
 
     expect(reply).toHaveBeenCalledWith(
-      'Некорректная дата. Пример: 2026-10-16.',
+      'Некорректная дата. Пример: 16-10-2026.',
     );
 
     reply.mockClear();
-    await handleMessage('2026-02-28', reply, 'test-date');
+    await handleMessage('28-02-2026', reply, userId);
 
     expect(reply).toHaveBeenCalledWith(
       'Введи категорию расхода, например Еда.',
@@ -68,10 +74,10 @@ describe('Message handler', () => {
   });
 
   test('validates category and amount, then saves a transaction', async () => {
-    const userId = 'test-add-transaction';
+    const userId = '910031';
 
     await handleMessage('/add_transaction', reply, userId);
-    await handleMessage('2026-10-16', reply, userId);
+    await handleMessage('16-10-2026', reply, userId);
     reply.mockClear();
 
     await handleMessage('   ', reply, userId);
@@ -92,32 +98,35 @@ describe('Message handler', () => {
     await handleMessage('250,50', reply, userId);
 
     expect(reply).toHaveBeenCalledWith(
-      'Расход сохранён: 2026-10-16, Еда, 250.5.',
+      'Расход сохранён: 16-10-2026, Еда, 250.5.',
     );
   });
 
   test('builds a report for a valid period', async () => {
-    const userId = 'test-report';
+    const userId = '910032';
 
     await handleMessage('/report', reply, userId);
+    expect(reply).toHaveBeenCalledWith(
+      'Введи начало периода в формате ДД-ММ-ГГГГ.',
+    );
     reply.mockClear();
 
-    await handleMessage('2026-10-01', reply, userId);
-    await handleMessage('2026-10-31', reply, userId);
+    await handleMessage('01-10-2026', reply, userId);
+    await handleMessage('31-10-2026', reply, userId);
 
     expect(reply).toHaveBeenCalledWith(
-      expect.stringContaining('Отчёт за 2026-10-01 — 2026-10-31'),
+      expect.stringContaining('Отчёт за 01-10-2026 — 31-10-2026'),
     );
   });
 
   test('rejects report end date before start date', async () => {
-    const userId = 'test-report-dates';
+    const userId = '910036';
 
     await handleMessage('/report', reply, userId);
-    await handleMessage('2026-10-20', reply, userId);
+    await handleMessage('20-10-2026', reply, userId);
     reply.mockClear();
 
-    await handleMessage('2026-10-01', reply, userId);
+    await handleMessage('01-10-2026', reply, userId);
 
     expect(reply).toHaveBeenCalledWith(
       'Конец периода не может быть раньше начала. Введи дату ещё раз.',

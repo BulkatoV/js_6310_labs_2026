@@ -8,9 +8,11 @@ const app = express();
 
 app.use(express.json());
 
+const API_USER_ID = '910021';
+
 app.post('/api/transactions', (req, res) => {
   try {
-    const saved = addTransaction(req.body);
+    const saved = addTransaction(API_USER_ID, req.body);
 
     res.status(201).json({
       ok: true,
@@ -27,7 +29,7 @@ app.post('/api/transactions', (req, res) => {
 app.get('/api/report', (req, res) => {
   try {
     const { from, to } = req.query;
-    const report = getReport(from, to);
+    const report = getReport(API_USER_ID, from, to);
 
     res.json(report);
   } catch (error) {

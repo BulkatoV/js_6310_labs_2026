@@ -1,10 +1,21 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const dataDirectory = fileURLToPath(
-  new URL('../../data/users/', import.meta.url)
+const projectDirectory = fileURLToPath(
+  new URL('../../', import.meta.url),
 );
+
+const isTestEnvironment = process.env.NODE_ENV === 'test';
+
+const dataDirectory = isTestEnvironment
+  ? join(projectDirectory, 'data', 'tests', 'users')
+  : join(projectDirectory, 'data', 'users');
 
 const getUserStoragePath = (userId) => {
   if (!/^\d+$/.test(String(userId))) {
@@ -37,6 +48,6 @@ export const saveTransactions = (userId, transactions) => {
   writeFileSync(
     storagePath,
     JSON.stringify(transactions, null, 2),
-    'utf8'
+    'utf8',
   );
 };

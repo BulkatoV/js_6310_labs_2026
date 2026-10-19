@@ -6,14 +6,26 @@ import {
 const sessions = new Map();
 
 const isValidDate = (value) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (!/^\d{2}-\d{2}-\d{4}$/.test(value)) {
     return false;
   }
 
-  const date = new Date(`${value}T00:00:00Z`);
+  const [day, month, year] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
 
-  return !Number.isNaN(date.getTime())
-    && date.toISOString().slice(0, 10) === value;
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day;
+};
+
+const toISODate = (value) => {
+  const [day, month, year] = value.split('-');
+  return `${year}-${month}-${day}`;
+};
+
+const toDisplayDate = (value) => {
+  const [year, month, day] = value.split('-');
+  return `${day}-${month}-${year}`;
 };
 
 const handleMessage = async (text, reply, userId = 'default') => {
@@ -39,13 +51,13 @@ const handleMessage = async (text, reply, userId = 'default') => {
 
   if (text === '/add_transaction') {
     sessions.set(userId, { step: 'date' });
-    await reply('Введи дату расхода в формате ГГГГ-ММ-ДД.');
+    await reply('Введи дату расхода в формате ДД-ММ-ГГГГ.');
     return;
   }
 
   if (text === '/report') {
     sessions.set(userId, { step: 'reportFrom' });
-    await reply('Введи начало периода в формате ГГГГ-ММ-ДД.');
+    await reply('Введи начало периода в формате ДД-ММ-ГГГГ.');
     return;
   }
 
@@ -58,11 +70,11 @@ const handleMessage = async (text, reply, userId = 'default') => {
 
   if (session.step === 'date') {
     if (!isValidDate(text)) {
-      await reply('Некорректная дата. Пример: 2026-10-16.');
+      await reply('Некорректная дата. Пример: 16-10-2026.');
       return;
     }
 
-    session.date = text;
+    session.date = toISODate(text);
     session.step = 'category';
     await reply('Введи категорию расхода, например Еда.');
     return;
@@ -97,35 +109,38 @@ const handleMessage = async (text, reply, userId = 'default') => {
     sessions.delete(userId);
 
     await reply(
-      `Расход сохранён: ${saved.date}, ${saved.category}, ${saved.amount}.`,
+      `Расход сохранён: ${toDisplayDate(saved.date)}, ${saved.category}, ${saved.amount}.`,
     );
     return;
   }
 
   if (session.step === 'reportFrom') {
     if (!isValidDate(text)) {
-      await reply('Некорректная дата. Пример: 2026-10-01.');
+      await reply('Некорректная дата. Пример: 16-10-2026.');
       return;
     }
 
-    session.from = text;
+    session.from = toISODate(text);
     session.step = 'reportTo';
-    await reply('Теперь введи конец периода в формате ГГГГ-ММ-ДД.');
+    await reply('Теперь введи конец периода в формате ДД-ММ-ГГГГ.');
     return;
   }
 
   if (session.step === 'reportTo') {
     if (!isValidDate(text)) {
-      await reply('Некорректная дата. Пример: 2026-10-31.');
+      await reply('Некорректная дата. Пример: 16-10-2026.');
       return;
     }
 
-    if (text < session.from) {
+    const to = toISODate(text);
+
+    if (to < session.from) {
       await reply('Конец периода не может быть раньше начала. Введи дату ещё раз.');
       return;
     }
 
-    const report = getReport(userId, session.from, text);
+    const report = getReport(userId, session.from, to);
+
     sessions.delete(userId);
 
     const categories = Object.entries(report.byCategory);
@@ -135,7 +150,7 @@ const handleMessage = async (text, reply, userId = 'default') => {
       : 'Расходов за этот период нет.';
 
     await reply(
-      `Отчёт за ${session.from} — ${text}\n`
+      `Отчёт за ${toDisplayDate(session.from)} — ${toDisplayDate(to)}\n`
       + `Всего: ${report.total}\n\n`
       + `По категориям:\n${categoryText}`,
     );
